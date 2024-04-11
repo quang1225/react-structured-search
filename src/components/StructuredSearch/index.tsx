@@ -49,7 +49,7 @@ export type StructuredSearchProps = SelectProps & {
   width?: number | string;
   height?: number | string;
   prefixIcon?: ReactNode;
-  queryFilterKey?: string;
+  defaultFilterKey?: string;
 };
 
 export type SearchResult = {
@@ -64,7 +64,6 @@ export type TagColorProp = TagProps["color"];
 const { Option } = Select;
 
 const TYPEAHEAD_DELAY = 400;
-export const DEFAULT_QUERY_FILTER_KEY = "query";
 
 let isLastValueEndsWithAnOperatorCallbackState = false;
 
@@ -78,7 +77,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   width = "100%",
   height = 40,
   prefixIcon = <SearchOutlined />,
-  queryFilterKey = DEFAULT_QUERY_FILTER_KEY,
+  defaultFilterKey,
   ...rest
 }) => {
   const [boxValues, setBoxValues] = useState<string[]>([]);
@@ -90,6 +89,8 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
   const selectRef = useRef<any>(null);
+
+  const defaultFilterKeyState = defaultFilterKey || filters[0].value;
 
   // Memoize values for better performance
   const filterValues = useMemo(
@@ -179,7 +180,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
               textDecoration: disabled ? "line-through" : "unset",
             }}
           >
-            {label}
+            <div className="tagContent">{label}</div>
           </StyledTag>
         </Tooltip>
       );
@@ -269,7 +270,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
 
     // add new Search text
     const queryFilterIndex = boxValues.findIndex((value) =>
-      value.startsWith(queryFilterKey),
+      value.startsWith(defaultFilterKeyState),
     );
 
     if (queryFilterIndex > -1) {
@@ -284,11 +285,11 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
 
     // add the Search filter
     const defaultOperatorOfQueryFilter = filters.find(
-      (filter) => filter.value === queryFilterKey,
+      (filter) => filter.value === defaultFilterKeyState,
     )?.operators?.[0]?.value;
 
     const rs = boxValues.concat(
-      `${queryFilterKey}${defaultOperatorOfQueryFilter}${newValue}`,
+      `${defaultFilterKeyState}${defaultOperatorOfQueryFilter}${newValue}`,
     );
     setBoxValues(rs);
     return rs;

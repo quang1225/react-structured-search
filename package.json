@@ -1,6 +1,6 @@
 {
   "name": "react-structured-search",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "main": "./dist/index.js",
   "description": "A React, Typescript library for quickly intergrate autocomplete search queries with dynamic suggestions.",
   "license": "MIT",

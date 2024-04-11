@@ -16,7 +16,7 @@ const CustomContainer = ({ children, context, ...props }) => {
   return (
     <DocsContainer context={context} {...props}>
       {children}
-      <Analytics/>
+      <Analytics />
     </DocsContainer>
   );
 };
@@ -44,8 +44,9 @@ export default {
     clearAfterSearch: {
       description: "Clear search box after pressing enter",
     },
-    queryFilterKey: {
-      description: "Default query search key",
+    defaultFilterKey: {
+      description:
+        "Default added filter after user enters text only ( Filter's values )",
     },
   },
   // Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args

@@ -2,17 +2,14 @@ import {
   SearchOutlined,
   GlobalOutlined,
   CodeSandboxOutlined,
-  MailOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import {
-  DEFAULT_QUERY_FILTER_KEY,
-  Filter,
-  type Option,
-} from "../../components/StructuredSearch";
+import { Filter, type Option } from "../../components/StructuredSearch";
 import React from "react";
 
 // START mock
+export const DEFAULT_QUERY_FILTER_KEY = "query";
+
 export const mockAsyncFunction = (
   obj: Option[],
   delay = 500,

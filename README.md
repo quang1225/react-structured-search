@@ -27,8 +27,6 @@ import { StructuredSearch } from "@data-platform/structured-search";
 
 <StructuredSearch
   filters={mockFilters()}
-  width="50%"
-  dropdownStyle={{ maxWidth: 400 }}
   onSubmit={(rs) => console.log("Search result:", rs)}
 />;
 ```
@@ -37,16 +35,18 @@ The example mockFilter() function:
 
 ```js
 // START mock
-export const mockAsyncFunction = (obj: Option[], delay = 500): Promise<Option[]> =>
+const DEFAULT_QUERY_FILTER_KEY = "query";
+
+const mockAsyncFunction = (obj: Option[], delay = 500): Promise<Option[]> =>
   new Promise((resolve) => {
     setTimeout(() => {
       resolve(obj);
     }, delay);
   });
 
-export const getRandomNumberBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+const getRandomNumberBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
 
-export const getRandomItemNameOptions = (name: string) => {
+const getRandomItemNameOptions = (name: string) => {
   const result: string[] = [];
   const numItems = getRandomNumberBetween(3, 10); // Generate a random number of items between 0 and 9
 
@@ -72,7 +72,7 @@ const OPERATORS = {
   },
 };
 
-export const mockFilters = (isHidden = false): Filter[] => [
+const mockFilters = (isHidden = false): Filter[] => [
   {
     value: DEFAULT_QUERY_FILTER_KEY,
     name: "Search text",
@@ -117,14 +117,19 @@ export const mockFilters = (isHidden = false): Filter[] => [
 
 ## Types
 
-| StructuredSearchProps | Type                                                             | Description                                |
-| :-------------------- | :--------------------------------------------------------------- | :----------------------------------------- |
-| **`filters`**         | Filter[]                                                         | Filters configuration                      |
-| **`onSubmit`**        | (result: SearchResult[]) => void                                 | Handle pressing Enter or submit            |
-| **`onChange`**        | (values: string[]) => void                                       | Handle changing box values                 |
-| **`onBlur`**          | FocusEventHandler                                                | Handle box lossing focus                   |
-| **`onInputKeyDown`**  | KeyboardEventHandler                                             | Handle box's input keying down             |
-| **...rest**           | [AntDesignSelectProps](https://ant.design/components/select#api) | All props of Ant Design's Select component |
+| `StructuredSearchProps` | Type                                                             | Description                                                          |
+| :---------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------- |
+| **`filters`**           | Filter[]                                                         | Filters configuration                                                |
+| **`onSubmit`**          | (result: SearchResult[]) => void                                 | Handle pressing Enter or submit                                      |
+| **`onChange`**          | (values: string[]) => void                                       | Handle changing box values                                           |
+| **`onBlur`**            | FocusEventHandler                                                | Handle box lossing focus                                             |
+| **`onInputKeyDown`**    | KeyboardEventHandler                                             | Handle box's input keying down                                       |
+| **`clearAfterSearch`**  | boolean                                                          | Clear the input after searching                                      |
+| **`width`**             | number or string                                                 | Width of the search box                                              |
+| **`height`**            | number or string                                                 | Height of the search box                                             |
+| **`prefixIcon`**        | ReactNode                                                        | Custom prefix icon                                                   |
+| **`defaultFilterKey`**  | KeyboardEventHandler                                             | Default added filter after user enters text only ( Filter's values ) |
+| **...rest**             | [AntDesignSelectProps](https://ant.design/components/select#api) | All props of Ant Design's Select component                           |
 
 <br/>
 

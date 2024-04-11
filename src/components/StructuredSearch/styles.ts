@@ -87,8 +87,19 @@ const StyledOption = styled.div`
 `;
 
 const StyledTag = styled(Tag)`
+  display: flex;
+  align-items: center;
   font-size: 14px;
-  padding: 3px 7px;
+  padding: 4px 7px;
+
+  span {
+    margin-inline-start: 0px !important;
+  }
+
+  .tagContent {
+    margin-left: 6px;
+    margin-right: 10px;
+  }
 `;
 
 export { StyledSelect, StyledOption, StyledTag };
