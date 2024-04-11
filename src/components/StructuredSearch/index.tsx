@@ -73,7 +73,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   onChange,
   onBlur,
   onInputKeyDown,
-  clearAfterSearch = true,
+  clearAfterSearch = false,
   width = "100%",
   height = 40,
   prefixIcon = <SearchOutlined />,
@@ -370,51 +370,55 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     setSearchValue("");
   };
 
+  const handleSubmit = () => {
+    if (!boxValues.length && !searchValue) return;
+
+    let outputBoxValues = [...boxValues];
+
+    // get new values before submitting
+    if (searchValue) {
+      outputBoxValues = handleChange(boxValues.concat(searchValue));
+    }
+
+    // map output search object
+    const searchObj: SearchResult[] = outputBoxValues.reduce(
+      (arr, tagValue) => {
+        const operatorKey = tagValue.match(
+          /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/g,
+        )?.[0];
+        if (!operatorKey) return arr;
+
+        const splitArray = tagValue.split(operatorKey);
+
+        const filterKey = splitArray[0];
+        if (!filterKey) return arr;
+
+        const value = splitArray[1] || "";
+
+        return arr.concat({ filterKey, operatorKey, value } as SearchResult);
+      },
+      [] as SearchResult[],
+    );
+
+    if (!searchObj.length) return;
+
+    onSubmit?.(searchObj);
+
+    // clear search input
+    setSearchValue("");
+    selectRef.current.blur();
+
+    if (clearAfterSearch) setBoxValues([]);
+  };
+
   // navigate to Search Result page when press Enter
   const handleInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     onInputKeyDown?.(e);
 
-    if (e.key === "Enter" || e.keyCode === 13) {
-      if (!boxValues.length) return;
-
-      let outputBoxValues = [...boxValues];
-
-      // get new values before submitting
-      if (searchValue) {
-        outputBoxValues = handleChange(boxValues.concat(searchValue));
-      }
-
-      // map output search object
-      const searchObj: SearchResult[] = outputBoxValues.reduce(
-        (arr, tagValue) => {
-          const operatorKey = tagValue.match(
-            /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/g,
-          )?.[0];
-          if (!operatorKey) return arr;
-
-          const splitArray = tagValue.split(operatorKey);
-
-          const filterKey = splitArray[0];
-          if (!filterKey) return arr;
-
-          const value = splitArray[1] || "";
-
-          return arr.concat({ filterKey, operatorKey, value } as SearchResult);
-        },
-        [] as SearchResult[],
-      );
-
-      if (!searchObj.length) return;
-
-      onSubmit?.(searchObj);
-
-      // clear search input
-      setSearchValue("");
-      selectRef.current.blur();
-
-      if (clearAfterSearch) setBoxValues([]);
+    if (e.key === "Enter") {
+      handleSubmit();
     }
   };
 

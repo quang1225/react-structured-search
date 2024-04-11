@@ -117,28 +117,28 @@ const mockFilters = (isHidden = false): Filter[] => [
 
 ## Types
 
-| `StructuredSearchProps` | Type                                                             | Description                                                          |
-| :---------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------- |
-| **`filters`**           | Filter[]                                                         | Filters configuration                                                |
-| **`onSubmit`**          | (result: SearchResult[]) => void                                 | Handle pressing Enter or submit                                      |
-| **`onChange`**          | (values: string[]) => void                                       | Handle changing box values                                           |
-| **`onBlur`**            | FocusEventHandler                                                | Handle box lossing focus                                             |
-| **`onInputKeyDown`**    | KeyboardEventHandler                                             | Handle box's input keying down                                       |
-| **`clearAfterSearch`**  | boolean                                                          | Clear the input after searching                                      |
-| **`width`**             | number or string                                                 | Width of the search box                                              |
-| **`height`**            | number or string                                                 | Height of the search box                                             |
-| **`prefixIcon`**        | ReactNode                                                        | Custom prefix icon                                                   |
-| **`defaultFilterKey`**  | KeyboardEventHandler                                             | Default added filter after user enters text only ( Filter's values ) |
-| **...rest**             | [AntDesignSelectProps](https://ant.design/components/select#api) | All props of Ant Design's Select component                           |
+| StructuredSearchProps  | Type                                                             | Description                                                          |
+| :--------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------- |
+| **`filters`**          | Filter[]                                                         | Filters configuration                                                |
+| **`onSubmit`**         | (result: SearchResult[]) => void                                 | Handle pressing Enter or submit                                      |
+| **`onChange`**         | (values: string[]) => void                                       | Handle changing box values                                           |
+| **`onBlur`**           | FocusEventHandler                                                | Handle box lossing focus                                             |
+| **`onInputKeyDown`**   | KeyboardEventHandler                                             | Handle box's input keying down                                       |
+| **`clearAfterSearch`** | boolean                                                          | Clear the input after pressing Enter or submit                       |
+| **`width`**            | number or string                                                 | Width of the search box                                              |
+| **`height`**           | number or string                                                 | Height of the search box                                             |
+| **`prefixIcon`**       | ReactNode                                                        | Custom prefix icon                                                   |
+| **`defaultFilterKey`** | string                                                           | Default added filter after user enters text only ( Filter's values ) |
+| **...rest**            | [AntDesignSelectProps](https://ant.design/components/select#api) | All props of Ant Design's Select component                           |
 
 <br/>
 
-| Filter                  | Type                                      | Description                                                    |
-| :---------------------- | :---------------------------------------- | :------------------------------------------------------------- |
-| **`operators`**         | Option[]                                  | Operators configuration                                        |
-| **`typeaheadCallback`** | (searchText: string) => Promise<Option[]> | API callback when user finish typing search text ( debounced ) |
-| **`tagColor`**          | TagColorProp                              | Colors supported by Duxton UI's Tag component                  |
-| **...rest**             | Option                                    | All props of `Option` type                                     |
+| Filter                  | Type                                                                         | Description                                                    |
+| :---------------------- | :--------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| **`operators`**         | Option[]                                                                     | Operators configuration                                        |
+| **`typeaheadCallback`** | (searchText: string) => Promise<Option[]>                                    | API callback when user finish typing search text ( debounced ) |
+| **`tagColor`**          | [AntDesignTagColorProp](https://ant.design/components/tag#tag-demo-colorful) | Colors supported by Ant Design's Tag component                 |
+| **...rest**             | Option                                                                       | All props of `Option` type                                     |
 
 <br/>
 
