@@ -39,7 +39,9 @@ export type Filter = Option & {
 
 export type StructuredSearchProps = SelectProps & {
   filters: Filter[];
-  onSubmit?: (result: SearchResult[]) => void;
+  value?: StructuredSearchValue[];
+  defaultValue?: StructuredSearchValue[];
+  onSubmit?: (result: StructuredSearchValue[]) => void;
   onChange?: (values: string[]) => void;
   onBlur?: React.FocusEventHandler<HTMLElement>;
   onInputKeyDown?: React.KeyboardEventHandler<
@@ -52,10 +54,10 @@ export type StructuredSearchProps = SelectProps & {
   defaultFilterKey?: string;
 };
 
-export type SearchResult = {
-  filterKey: string;
-  operatorKey: string;
-  value: string;
+export type StructuredSearchValue = {
+  filterKey?: string;
+  operatorKey?: string;
+  value?: string;
 };
 
 type TagRender = SelectProps["tagRender"];
@@ -66,6 +68,48 @@ const { Option } = Select;
 const TYPEAHEAD_DELAY = 400;
 
 let isLastValueEndsWithAnOperatorCallbackState = false;
+
+const getSelectValue = ({
+  filterKey,
+  operatorKey,
+  value,
+}: StructuredSearchValue) => `${filterKey}${operatorKey}${value}`;
+
+const mapBoxValuesToSelectValue = (
+  boxValues: string[],
+): StructuredSearchValue[] => {
+  const searchObj: StructuredSearchValue[] = boxValues.reduce(
+    (arr, tagValue) => {
+      const operatorKey = tagValue.match(
+        /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/g,
+      )?.[0];
+      if (!operatorKey) return arr;
+
+      const splitArray = tagValue.split(operatorKey);
+
+      const filterKey = splitArray[0];
+      if (!filterKey) return arr;
+
+      const value = splitArray[1] || "";
+
+      return arr.concat({
+        filterKey,
+        operatorKey,
+        value,
+      } as StructuredSearchValue);
+    },
+    [] as StructuredSearchValue[],
+  );
+
+  return searchObj;
+};
+
+const mapSelectValueToBoxValues = (
+  values?: StructuredSearchValue[],
+): string[] => {
+  const boxValues: string[] = values?.map((rs) => getSelectValue(rs)) || [];
+  return boxValues;
+};
 
 const StructuredSearch: FC<StructuredSearchProps> = ({
   filters,
@@ -78,9 +122,13 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   height = 40,
   prefixIcon = <SearchOutlined />,
   defaultFilterKey,
+  value,
+  defaultValue,
   ...rest
 }) => {
-  const [boxValues, setBoxValues] = useState<string[]>([]);
+  const [boxValues, setBoxValues] = useState<string[]>(
+    mapSelectValueToBoxValues(defaultValue),
+  );
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearchText, , setDebouncedSearchText] = useDebouncedState(
     "",
@@ -89,6 +137,10 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
   const selectRef = useRef<any>(null);
+
+  useEffect(() => {
+    setBoxValues(mapSelectValueToBoxValues(value));
+  }, [value]);
 
   const defaultFilterKeyState = defaultFilterKey || filters[0].value;
 
@@ -229,7 +281,11 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
       if (isLastValueAFilterKey) {
         // if operator not included, add first operator of the filter as default
         if (!isNewValueAOperator) {
-          newLastValue = `${lastValue}${operatorValues[0]}${newValue}`;
+          newLastValue = getSelectValue({
+            filterKey: lastValue,
+            operatorKey: operatorValues[0],
+            value: newValue,
+          });
         }
       }
 
@@ -381,25 +437,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     }
 
     // map output search object
-    const searchObj: SearchResult[] = outputBoxValues.reduce(
-      (arr, tagValue) => {
-        const operatorKey = tagValue.match(
-          /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/g,
-        )?.[0];
-        if (!operatorKey) return arr;
-
-        const splitArray = tagValue.split(operatorKey);
-
-        const filterKey = splitArray[0];
-        if (!filterKey) return arr;
-
-        const value = splitArray[1] || "";
-
-        return arr.concat({ filterKey, operatorKey, value } as SearchResult);
-      },
-      [] as SearchResult[],
-    );
-
+    const searchObj = mapBoxValuesToSelectValue(outputBoxValues);
     if (!searchObj.length) return;
 
     onSubmit?.(searchObj);

@@ -2,8 +2,8 @@ import StructuredSearch, {
   Filter,
   Option,
   StructuredSearchProps,
-  SearchResult,
+  StructuredSearchValue,
 } from "./components/StructuredSearch";
 
 export default StructuredSearch;
-export { Filter, Option, StructuredSearchProps, SearchResult };
+export { Filter, Option, StructuredSearchProps, StructuredSearchValue };

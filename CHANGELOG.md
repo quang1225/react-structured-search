@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.11
+
+`2024-04-14`
+
+- 🆕 Add `value` and `defaultValue` prop
+
 ## v1.0.9
 
 `2024-04-11`

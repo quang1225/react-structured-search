@@ -120,7 +120,9 @@ const mockFilters = (isHidden = false): Filter[] => [
 | StructuredSearchProps  | Type                                                             | Description                                                          |
 | :--------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------- |
 | **`filters`**          | Filter[]                                                         | Filters configuration                                                |
-| **`onSubmit`**         | (result: SearchResult[]) => void                                 | Handle pressing Enter or submit                                      |
+| **`value`**            | StructuredSearchValue[]                                          | Current value                                                        |
+| **`defaultValue`**     | StructuredSearchValue[]                                          | Default value when init                                              |
+| **`onSubmit`**         | (result: StructuredSearchValue[]) => void                        | Handle pressing Enter or submit                                      |
 | **`onChange`**         | (values: string[]) => void                                       | Handle changing box values                                           |
 | **`onBlur`**           | FocusEventHandler                                                | Handle box lossing focus                                             |
 | **`onInputKeyDown`**   | KeyboardEventHandler                                             | Handle box's input keying down                                       |
@@ -142,6 +144,14 @@ const mockFilters = (isHidden = false): Filter[] => [
 
 <br/>
 
+| StructuredSearchValue | Type   | Description                      |
+| :-------------------- | :----- | :------------------------------- |
+| **`filterKey`**       | string | Filter key value of a filter tag |
+| **`operatorKey`**     | string | Operator value of a filter tag   |
+| **`value`**           | string | Search value of a filter tag     |
+
+<br/>
+
 | Option               | Type                                                               | Description                                                    |
 | :------------------- | :----------------------------------------------------------------- | :------------------------------------------------------------- |
 | **`value`**          | string                                                             | Value of the option                                            |
@@ -152,11 +162,3 @@ const mockFilters = (isHidden = false): Filter[] => [
 | **`hidden`**         | (selectedValues: string[]) => boolean;                             | Hide the option, selectedValues is the box's current values    |
 | **`disabled`**       | (selectedValues: string[]) => boolean;                             | Disable the option, selectedValues is the box's current values |
 | **`disableTooltip`** | [AntDesignTooltipProps](https://ant.design/components/tooltip#api) | Tooltip of the option when disabled                            |
-
-<br/>
-
-| SearchResult      | Type   | Description                      |
-| :---------------- | :----- | :------------------------------- |
-| **`filterKey`**   | string | Filter key value of a filter tag |
-| **`operatorKey`** | string | Operator value of a filter tag   |
-| **`value`**       | string | Search value of a filter tag     |
