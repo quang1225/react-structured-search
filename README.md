@@ -18,6 +18,18 @@ A React, Typescript library for quickly intergrate autocomplete search queries w
 - 🔥 Dynamic typeahead suggestion with passed in callbacks
 - 🔥 Easy to customize
 
+## Install
+
+```bash
+npm install react-structured-search
+```
+
+or
+
+```bash
+yarn add react-structured-search
+```
+
 ## Usage
 
 Simple use like this:
