@@ -37,28 +37,35 @@ Simple use like this:
 ```js
 import { StructuredSearch } from "@data-platform/structured-search";
 
+...
+
 <StructuredSearch
-  filters={mockFilters()}
+  filters={MOCK_FILTERS}
+  dropdownStyle={{ maxWidth: 400 }}
   onSubmit={(rs) => console.log("Search result:", rs)}
-/>;
+/>
 ```
 
 The example mockFilter() function:
 
 ```js
 // START mock
-const DEFAULT_QUERY_FILTER_KEY = "query";
+export const DEFAULT_QUERY_FILTER_KEY = "query";
 
-const mockAsyncFunction = (obj: Option[], delay = 500): Promise<Option[]> =>
+export const mockAsyncFunction = (
+  obj: Option[],
+  delay = 500,
+): Promise<Option[]> =>
   new Promise((resolve) => {
     setTimeout(() => {
       resolve(obj);
     }, delay);
   });
 
-const getRandomNumberBetween = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+export const getRandomNumberBetween = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1) + min);
 
-const getRandomItemNameOptions = (name: string) => {
+export const getRandomItemNameOptions = (name: string) => {
   const result: string[] = [];
   const numItems = getRandomNumberBetween(3, 10); // Generate a random number of items between 0 and 9
 
@@ -84,45 +91,61 @@ const OPERATORS = {
   },
 };
 
-const mockFilters = (isHidden = false): Filter[] => [
+const authorFilter = {
+  value: "author",
+  name: "Author",
+  icon: <UserOutlined />,
+  subText: "By an author account or email",
+  tagColor: "cyan",
+  operators: [OPERATORS.Equal],
+};
+
+export const MOCK_FILTERS: Filter[] = [
   {
-    value: DEFAULT_QUERY_FILTER_KEY,
-    name: "Search text",
-    icon: <SearchUniversal />,
-    subText: "Name includes",
-    operators: [OPERATORS.Equal],
+    value: "atrributes",
+    name: "Attributes",
+    icon: <CodeSandboxOutlined />,
+    subText: "Search for attributes",
+    tagColor: "#F09801",
+    disableTooltip: { title: "Disabled because..." },
+    children: [
+      {
+        value: "domain",
+        name: "Domain",
+        icon: <GlobalOutlined />,
+        subText: "In a domain",
+        tagColor: "green",
+        disableTooltip: { title: "Disabled because Namespace existed" },
+        operators: [OPERATORS.Equal, OPERATORS.NotEqual],
+        options: async (searchText) =>
+          mockAsyncFunction(getRandomItemNameOptions("Domain")),
+      },
+      authorFilter,
+    ],
   },
   {
-    value: "domain",
-    name: "Domain",
-    icon: <GlobeUniversal />,
-    subText: "In a domain",
-    tagColor: "gold",
-    [isHidden ? "hidden" : "disabled"]: (tagValues) => !!tagValues.find((value) => value.startsWith("namespace")),
-    disableTooltip: { title: "Disabled because Namespace existed" },
-    operators: [OPERATORS.Equal, OPERATORS.NotEqual],
-    typeaheadCallback: async (searchText) => mockAsyncFunction(getRandomItemNameOptions("Domain")),
+    value: "segments",
+    name: "Segments",
+    icon: <ExperimentOutlined />,
+    subText: "Search for segments",
+    tagColor: "#F09801",
+    disableTooltip: { title: "Disabled because..." },
+    children: [
+      {
+        value: "namespace",
+        name: "Namespace",
+        icon: <SafetyOutlined />,
+        subText: "In a namespace",
+        tagColor: "green",
+        disableTooltip: { title: "Disabled because Domain existed" },
+        operators: [OPERATORS.Equal, OPERATORS.NotEqual],
+        options: async (searchText) =>
+          mockAsyncFunction(getRandomItemNameOptions("Namespace")),
+      },
+      authorFilter,
+    ],
   },
-  {
-    value: "namespace",
-    name: "Namespace",
-    icon: <SafetyCenterUniversal />,
-    subText: "In a namespace",
-    tagColor: "green",
-    [isHidden ? "hidden" : "disabled"]: (tagValues) => !!tagValues.find((value) => value.startsWith("domain")), // hidden if Domain was selected
-    disableTooltip: { title: "Disabled because Domain existed" },
-    operators: [OPERATORS.Equal, OPERATORS.NotEqual],
-    typeaheadCallback: async (searchText) => mockAsyncFunction(getRandomItemNameOptions("Namespace")),
-  },
-  {
-    value: "author",
-    name: "Author",
-    icon: <UserOutlined />,
-    subText: "By an author account or email",
-    tagColor: "cyan",
-    operators: [OPERATORS.Equal, OPERATORS.NotEqual],
-    typeaheadCallback: async (searchText) => mockAsyncFunction(getRandomItemNameOptions("Author")),
-  },
+  authorFilter,
 ];
 // END mock
 ```

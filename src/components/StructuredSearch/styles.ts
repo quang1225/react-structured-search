@@ -33,15 +33,48 @@ const StyledSelect = styled.div`
     }
 
     .ant-select-selector {
-      .ant-select-selection-overflow {
-        padding-left: 35px;
-      }
+      padding-left: 36px;
+
       .ant-select-selection-placeholder {
         padding-left: ${35 - 4}px;
       }
 
       .ant-select-selection-search {
         margin-left: 4px;
+      }
+    }
+
+    .ant-select-selection-overflow {
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: unset;
+      padding-bottom: 6px;
+      padding-top: 3px;
+
+      .ant-select-selection-overflow-item,
+      .ant-select-selection-overflow-item-suffix {
+        height: 30px;
+      }
+
+      ::-webkit-scrollbar {
+        height: 5px;
+        width: 4px;
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 12px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: lightgray;
+        cursor: initial;
+        border-radius: 12px;
+
+        :hover {
+          background: gray;
+        }
       }
     }
 
@@ -73,9 +106,10 @@ const StyledOption = styled.div`
 
   .leftSide {
     display: flex;
+    align-items: center;
     gap: 12px;
 
-    :where(.anticon) {
+    :where(.duxicon) {
       display: flex;
       align-items: center;
     }

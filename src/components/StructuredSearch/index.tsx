@@ -15,9 +15,18 @@ import {
   Tooltip,
   TooltipProps,
 } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, SearchOutlined } from "@ant-design/icons";
 import useDebouncedState from "../../hooks/useDebouncedState";
 import { StyledSelect, StyledOption, StyledTag } from "./styles";
+import {
+  mapSelectValueToBoxValues,
+  findDeepestGroupFilter,
+  findFilterByValue,
+  getSelectValue,
+  mapBoxValuesToSumitValue,
+  convertBoxValueToSearchValue,
+  moveGroupFilterKeyToTop,
+} from "../../helpers";
 import { DefaultOptionType } from "antd/es/select";
 
 export type Option = {
@@ -32,16 +41,15 @@ export type Option = {
 };
 
 export type Filter = Option & {
-  operators: Option[];
-  typeaheadCallback?: (searchText: string) => Promise<Option[]>;
+  operators?: Option[];
+  options?: ((searchText: string) => Promise<Option[]> | Option[]) | Option[];
   tagColor?: TagColorProp;
+  children?: Filter[];
 };
 
 export type StructuredSearchProps = SelectProps & {
   filters: Filter[];
-  value?: StructuredSearchValue[];
-  defaultValue?: StructuredSearchValue[];
-  onSubmit?: (result: StructuredSearchValue[]) => void;
+  onSubmit?: (result: StructuredSearchValue) => void;
   onChange?: (values: string[]) => void;
   onBlur?: React.FocusEventHandler<HTMLElement>;
   onInputKeyDown?: React.KeyboardEventHandler<
@@ -51,13 +59,21 @@ export type StructuredSearchProps = SelectProps & {
   width?: number | string;
   height?: number | string;
   prefixIcon?: ReactNode;
-  defaultFilterKey?: string;
+  groupIcon?: ReactNode;
+  defaultQueryKey?: string;
+  value?: StructuredSearchValue;
+  defaultValue?: StructuredSearchValue;
 };
 
-export type StructuredSearchValue = {
+export type StructuredSearchFilterValue = {
   filterKey?: string;
   operatorKey?: string;
   value?: string;
+};
+
+export type StructuredSearchValue = {
+  filters: StructuredSearchFilterValue[];
+  groupFilterKeys: string[];
 };
 
 type TagRender = SelectProps["tagRender"];
@@ -67,49 +83,9 @@ const { Option } = Select;
 
 const TYPEAHEAD_DELAY = 400;
 
+const DEFAULT_QUERY_KEY = "keywords";
+
 let isLastValueEndsWithAnOperatorCallbackState = false;
-
-const getSelectValue = ({
-  filterKey,
-  operatorKey,
-  value,
-}: StructuredSearchValue) => `${filterKey}${operatorKey}${value}`;
-
-const mapBoxValuesToSelectValue = (
-  boxValues: string[],
-): StructuredSearchValue[] => {
-  const searchObj: StructuredSearchValue[] = boxValues.reduce(
-    (arr, tagValue) => {
-      const operatorKey = tagValue.match(
-        /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/g,
-      )?.[0];
-      if (!operatorKey) return arr;
-
-      const splitArray = tagValue.split(operatorKey);
-
-      const filterKey = splitArray[0];
-      if (!filterKey) return arr;
-
-      const value = splitArray[1] || "";
-
-      return arr.concat({
-        filterKey,
-        operatorKey,
-        value,
-      } as StructuredSearchValue);
-    },
-    [] as StructuredSearchValue[],
-  );
-
-  return searchObj;
-};
-
-const mapSelectValueToBoxValues = (
-  values?: StructuredSearchValue[],
-): string[] => {
-  const boxValues: string[] = values?.map((rs) => getSelectValue(rs)) || [];
-  return boxValues;
-};
 
 const StructuredSearch: FC<StructuredSearchProps> = ({
   filters,
@@ -121,9 +97,11 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   width = "100%",
   height = 40,
   prefixIcon = <SearchOutlined />,
-  defaultFilterKey,
+  groupIcon = <ArrowRightOutlined />,
+  defaultQueryKey = DEFAULT_QUERY_KEY,
   value,
   defaultValue,
+  onDeselect,
   ...rest
 }) => {
   const [boxValues, setBoxValues] = useState<string[]>(
@@ -134,7 +112,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     "",
     TYPEAHEAD_DELAY,
   );
-  const [options, setOptions] = useState<Option[]>([]);
+  const [currentOptions, setCurrentOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
   const selectRef = useRef<any>(null);
 
@@ -142,69 +120,101 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     setBoxValues(mapSelectValueToBoxValues(value));
   }, [value]);
 
-  const defaultFilterKeyState = defaultFilterKey || filters[0].value;
-
   // Memoize values for better performance
-  const filterValues = useMemo(
-    () => Object.values(filters).map((filter) => filter.value),
-    [],
-  );
+  const { currentFilters, filterValues, currentGroupFilter } = useMemo(() => {
+    if (boxValues.length === 0) {
+      return {
+        currentFilters: filters,
+        filterValues: filters.map((filter) => filter.value),
+      };
+    }
+
+    let cCurrentFilters = filters;
+
+    // detect current Group Filter base on selected box values and index of depth of children
+    const cCurrentGroupFilter = findDeepestGroupFilter(filters, boxValues);
+    if (cCurrentGroupFilter?.children) {
+      cCurrentFilters = cCurrentGroupFilter.children;
+    }
+
+    const cFilterValues = cCurrentFilters.map((filter) => filter.value);
+
+    return {
+      currentFilters: cCurrentFilters,
+      filterValues: cFilterValues,
+      currentGroupFilter: cCurrentGroupFilter,
+    };
+  }, [boxValues]);
+
   const { operators, operatorValues } = useMemo(() => {
     const cOperators = [
-      ...new Set(filters.flatMap((filter) => filter.operators || [])),
+      ...new Set(currentFilters.flatMap((filter) => filter.operators || [])),
     ];
     const cOperatorValues = cOperators.map((operator) => operator.value);
 
     return { operators: cOperators, operatorValues: cOperatorValues };
   }, []);
+
+  // const allFilterKeys = useMemo(() => {
+  //   return getAllObjectValues(filters);
+  // }, [filters]);
+
   const {
-    lastValue,
+    lastBoxValue,
     lastFilterValue,
     lastFilterOperatorValue,
     lastFilter,
     filterOptions,
-    isLastValueAFilterKey,
+    isLastValueEndsWithAFilterKey,
     isLastValueEndsWithAnOperator,
+    isLastFilterAGroup,
   } = useMemo<{
-    lastValue: string;
-    lastFilterValue: string;
-    lastFilterOperatorValue: string;
+    lastBoxValue: string;
+    lastFilterValue: string | undefined;
+    lastFilterOperatorValue: string | undefined;
     lastFilter: Filter | undefined;
     filterOptions: Filter[];
-    isLastValueAFilterKey: boolean;
+    isLastValueEndsWithAFilterKey: boolean;
     isLastValueEndsWithAnOperator: boolean;
+    isLastFilterAGroup: boolean;
   }>(() => {
-    const sLastValue = boxValues.at(-1) || "";
-    const sFilterValue = sLastValue.match(/[a-zA-Z]/g)?.join("") || "";
-    const sOperatorValue = sLastValue.replace(sFilterValue, "");
-    const sCurrentFilterObj = filters.find(
-      (filter) => filter.value === sFilterValue,
+    const sLastBoxValue = boxValues.at(-1) || "";
+    const {
+      filterKey: sLastFilterValue,
+      operatorKey: sOperatorValue,
+      value: sValue,
+    } = convertBoxValueToSearchValue(sLastBoxValue);
+    const sLastFilter = currentFilters.find(
+      (filter) => filter.value === sLastFilterValue,
     );
-    const currentFilterOptions = filters.filter(
+    const sFilterOptions = currentFilters.filter(
       (filter) => !boxValues.find((value) => value?.startsWith(filter.value)),
     );
-    const sIsLastValueAFilterKey = filterValues.includes(sLastValue);
+    const sIsLastValueEndsWithAFilterKey = filterValues.includes(sLastBoxValue);
     const sIsLastValueEndsWithAnOperator = !!operatorValues.find(
-      (operatorVal) => sLastValue.endsWith(operatorVal),
+      (operatorVal) => sLastBoxValue.endsWith(operatorVal),
     );
+    const sIsLastFilterAGroup = !!sLastFilter?.children;
 
     return {
-      lastValue: sLastValue,
-      lastFilterValue: sFilterValue,
-      lastFilter: sCurrentFilterObj,
+      lastBoxValue: sLastBoxValue,
+      lastFilterValue: sLastFilterValue,
+      lastFilter: sLastFilter,
       lastFilterOperatorValue: sOperatorValue,
-      filterOptions: currentFilterOptions,
-      isLastValueAFilterKey: sIsLastValueAFilterKey,
+      filterOptions: sFilterOptions,
+      isLastValueEndsWithAFilterKey: sIsLastValueEndsWithAFilterKey,
       isLastValueEndsWithAnOperator: sIsLastValueEndsWithAnOperator,
+      isLastFilterAGroup: sIsLastFilterAGroup,
     };
   }, [boxValues, filterValues, operatorValues]);
 
   const tagRender: TagRender = useCallback(
     (props: { label: any; value: any; closable: any; onClose: any }) => {
       const { label, value, closable, onClose } = props;
-      const currentFilter = filters.find((filter) =>
-        String(value).startsWith(filter.value),
-      );
+
+      const { filterKey: currentFilterKey = "" } =
+        convertBoxValueToSearchValue(value);
+      const currentFilter = findFilterByValue(filters, currentFilterKey);
       const disabled =
         (currentFilter?.disabled !== undefined &&
           currentFilter.disabled(boxValues)) ||
@@ -237,7 +247,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
         </Tooltip>
       );
     },
-    [filters, boxValues],
+    [currentFilters, currentGroupFilter, boxValues],
   );
 
   const dropdownLoading = loading && isLastValueEndsWithAnOperator;
@@ -265,9 +275,11 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     // group Filter's items to a tag
     const isNewValueAOperator = operatorValues.includes(newValue);
 
-    const isInGroup = isLastValueAFilterKey || isLastValueEndsWithAnOperator;
-    if (isInGroup) {
-      let newLastValue = `${lastValue}${newValue}`;
+    const isInATag =
+      !isLastFilterAGroup &&
+      (isLastValueEndsWithAFilterKey || isLastValueEndsWithAnOperator);
+    if (isInATag) {
+      let newLastValue = `${lastBoxValue}${newValue}`;
 
       if (isLastValueEndsWithAnOperator) {
         // prevent string that contains operators after an operator
@@ -278,20 +290,18 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
         }
       }
 
-      if (isLastValueAFilterKey) {
-        // if operator not included, add first operator of the filter as default
-        if (!isNewValueAOperator) {
-          newLastValue = getSelectValue({
-            filterKey: lastValue,
-            operatorKey: operatorValues[0],
-            value: newValue,
-          });
-        }
+      // if Operator not included, add first operator of the filter as default
+      if (isLastValueEndsWithAFilterKey && !isNewValueAOperator) {
+        newLastValue = getSelectValue({
+          filterKey: lastBoxValue,
+          operatorKey: operatorValues[0],
+          value: newValue,
+        });
       }
 
       const newValues = [...boxValues];
       newValues[newValues.length - 1] = newLastValue;
-      setOptions([]);
+      setCurrentOptions([]);
       setBoxValues(newValues);
       return newValues;
     }
@@ -305,15 +315,14 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
       if (!isFilterKeyExist) {
         const newValues = [...values];
 
-        // if the Filter has only 1 Operator, attach the Operator too
-        const filterOperator =
-          filters.find((filter) => filter.value.startsWith(newValue))
-            ?.operators || [];
-        if (filterOperator.length === 1) {
-          newValues[newValues.length - 1] += filterOperator[0].value;
+        // if the Filter is not a Group and has only 1 Operator, attach the Operator too
+        const currentFilter = findFilterByValue(filters, newValue);
+        const filterDefaultOperator = currentFilter?.operators?.[0];
+        if (!currentFilter?.children && filterDefaultOperator) {
+          newValues[newValues.length - 1] += filterDefaultOperator.value;
         }
 
-        setOptions([]);
+        setCurrentOptions([]);
         setBoxValues(newValues);
         return newValues;
       }
@@ -324,28 +333,28 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
       return boxValues;
     }
 
-    // add new Search text
-    const queryFilterIndex = boxValues.findIndex((value) =>
-      value.startsWith(defaultFilterKeyState),
-    );
+    // merge Search text and move the Search filter to last index
+    const searchTagIndex = boxValues.findIndex((boxValue) => {
+      const { filterKey } = convertBoxValueToSearchValue(boxValue);
+      return filterKey === defaultQueryKey;
+    });
 
-    if (queryFilterIndex > -1) {
-      // merge Search text and move the Search filter to last index
+    if (searchTagIndex > -1) {
       const newBoxValues = [...boxValues];
-      newBoxValues.splice(queryFilterIndex, 1);
-      newBoxValues.push(`${boxValues[queryFilterIndex]} ${newValue}`);
+      newBoxValues.splice(searchTagIndex, 1);
+      newBoxValues.push(`${boxValues[searchTagIndex]} ${newValue}`);
 
       setBoxValues(newBoxValues);
       return newBoxValues;
     }
 
-    // add the Search filter
-    const defaultOperatorOfQueryFilter = filters.find(
-      (filter) => filter.value === defaultFilterKeyState,
-    )?.operators?.[0]?.value;
-
+    // add new Search text
     const rs = boxValues.concat(
-      `${defaultFilterKeyState}${defaultOperatorOfQueryFilter}${newValue}`,
+      getSelectValue({
+        filterKey: defaultQueryKey,
+        operatorKey: "=",
+        value: newValue,
+      }),
     );
     setBoxValues(rs);
     return rs;
@@ -355,18 +364,19 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     isLastValueEndsWithAnOperatorCallbackState = isLastValueEndsWithAnOperator;
   }, [isLastValueEndsWithAnOperator]);
 
-  // Memoize options for better performance
+  // Memoize currentOptions for better performance
   useEffect(() => {
     // call typeahead API
-    const fetchTypeaheadOptions = async () => {
+    const renderPromiseOptions = async () => {
       try {
         setLoading(true);
-        const rs =
-          (await lastFilter?.typeaheadCallback?.(debouncedSearchText)) || [];
+        const rs = await (typeof lastFilter?.options === "function"
+          ? lastFilter.options(debouncedSearchText)
+          : []);
         setLoading(false);
 
         if (isLastValueEndsWithAnOperatorCallbackState) {
-          setOptions(rs);
+          setCurrentOptions(rs);
         }
       } catch (error) {
         setLoading(false);
@@ -375,22 +385,39 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
 
     try {
       // after an Operator
-      if (lastFilterOperatorValue && lastFilter) {
-        // call typeahead API
-        fetchTypeaheadOptions();
+      if (isLastValueEndsWithAnOperator) {
+        const options = lastFilter?.options;
+
+        if (typeof options === "function") {
+          if (options("") instanceof Promise) {
+            renderPromiseOptions();
+          } else {
+            setCurrentOptions(options(searchValue) as Option[]);
+          }
+          return;
+        }
+
+        setCurrentOptions((lastFilter?.options as Option[]) || []);
         return;
       }
 
       // after a Filter key
-      if (lastFilter) {
-        setOptions(lastFilter.operators || []);
+      if (isLastValueEndsWithAFilterKey && lastFilter) {
+        // if the filter has Children, show them
+        if (lastFilter.children) {
+          setCurrentOptions(lastFilter.children || []);
+          return;
+        }
+
+        // show filter's Operators
+        setCurrentOptions(lastFilter.operators || []);
         return;
       }
 
       // blank or new Filter
-      setOptions(filterOptions);
+      setCurrentOptions(filterOptions);
     } catch (error) {
-      setOptions([]);
+      setCurrentOptions([]);
     }
   }, [
     lastFilter,
@@ -437,9 +464,7 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     }
 
     // map output search object
-    const searchObj = mapBoxValuesToSelectValue(outputBoxValues);
-    if (!searchObj.length) return;
-
+    const searchObj = mapBoxValuesToSumitValue(outputBoxValues, filters);
     onSubmit?.(searchObj);
 
     // clear search input
@@ -460,6 +485,25 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     }
   };
 
+  const handleRemoveATag = (value: string, option: DefaultOptionType) => {
+    // remove all children filter keys of a Group Filter when removing a group tag
+    const removedGroupFilter = findFilterByValue(filters, value);
+    if (removedGroupFilter) {
+      setBoxValues((prev) => {
+        const groupFilterValues =
+          removedGroupFilter?.children?.map((filter) => filter.value) || [];
+        const newValues = prev.filter(
+          (val) =>
+            !groupFilterValues.some((filterVals) => val.startsWith(filterVals)),
+        );
+        return newValues;
+      });
+      return;
+    }
+
+    onDeselect?.(value, option);
+  };
+
   return (
     <StyledSelect style={{ width, height }}>
       <span className="prefixIcon">{prefixIcon}</span>
@@ -477,10 +521,11 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
                       <Spin size="small" />
                     </div>
                   ),
+                  disabled: true,
                 } as DefaultOptionType,
               ]
             : []),
-          ...options
+          ...currentOptions
             .filter((option1) => !option1.hidden?.(boxValues))
             .map((option2) => {
               const disabled = option2.disabled?.(boxValues);
@@ -497,7 +542,13 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
                         {option2.icon}
                         {option2.name}
                       </div>
-                      <div className="rightSide">{option2.subText}</div>
+                      <div className="rightSide">
+                        {option2.subText}{" "}
+                        {Number(
+                          findFilterByValue(filters, option2.value)?.children
+                            ?.length,
+                        ) > 0 && groupIcon}
+                      </div>
                     </StyledOption>
                   </Tooltip>
                 ),
@@ -505,11 +556,12 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
               } as DefaultOptionType;
             }),
         ]}
-        value={boxValues}
+        value={moveGroupFilterKeyToTop(boxValues)}
         onChange={handleChange}
         onInputKeyDown={handleInputKeyDown}
         onSearch={handleSearchChange}
         onBlur={handleBlur}
+        onDeselect={handleRemoveATag}
         tokenSeparators={[":"]}
         loading={dropdownLoading}
         tagRender={tagRender}

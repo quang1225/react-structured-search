@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.0
+
+`2024-05-17`
+
+- 🆕 🔥 Add group filters feature
+
 ## v1.0.11
 
 `2024-04-14`

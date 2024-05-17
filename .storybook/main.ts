@@ -5,6 +5,7 @@ const config = {
     "../docs/**/*.mdx",
     "../**/*.stories.@(js|jsx|mjs|ts|tsx)",
   ],
+
   addons: [
     "@storybook/addon-webpack5-compiler-swc",
     "@storybook/addon-onboarding",
@@ -14,13 +15,14 @@ const config = {
     "@storybook/addon-interactions",
     "@storybook/addon-mdx-gfm"
   ],
+
   framework: {
     name: "@storybook/react-webpack5",
     options: {},
   },
+
   docs: {
-    autodocs: "tag",
-    defaultName: "Demo",
+    defaultName: "Demo"
   },
 };
 export default config;

@@ -1,7 +1,8 @@
 import {
-  SearchOutlined,
-  GlobalOutlined,
   CodeSandboxOutlined,
+  ExperimentOutlined,
+  GlobalOutlined,
+  SafetyOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Filter, type Option } from "../../components/StructuredSearch";
@@ -49,49 +50,60 @@ const OPERATORS = {
   },
 };
 
-export const mockFilters = (isHidden = false): Filter[] => [
+const authorFilter = {
+  value: "author",
+  name: "Author",
+  icon: <UserOutlined />,
+  subText: "By an author account or email",
+  tagColor: "cyan",
+  operators: [OPERATORS.Equal],
+};
+
+export const MOCK_FILTERS: Filter[] = [
   {
-    value: DEFAULT_QUERY_FILTER_KEY,
-    name: "Search text",
-    icon: <SearchOutlined />,
-    subText: "Name includes",
-    operators: [OPERATORS.Equal],
-  },
-  {
-    value: "domain",
-    name: "Domain",
-    icon: <GlobalOutlined />,
-    subText: "In a domain",
-    tagColor: "gold",
-    [isHidden ? "hidden" : "disabled"]: (tagValues) =>
-      !!tagValues.find((value) => value.startsWith("namespace")),
-    disableTooltip: { title: "Disabled because Namespace existed" },
-    operators: [OPERATORS.Equal, OPERATORS.NotEqual],
-    typeaheadCallback: async (searchText) =>
-      mockAsyncFunction(getRandomItemNameOptions("Domain")),
-  },
-  {
-    value: "namespace",
-    name: "Namespace",
+    value: "atrributes",
+    name: "Attributes",
     icon: <CodeSandboxOutlined />,
-    subText: "In a namespace",
-    tagColor: "green",
-    [isHidden ? "hidden" : "disabled"]: (tagValues) =>
-      !!tagValues.find((value) => value.startsWith("domain")),
-    disableTooltip: { title: "Disabled because Domain existed" },
-    operators: [OPERATORS.Equal, OPERATORS.NotEqual],
-    typeaheadCallback: async (searchText) =>
-      mockAsyncFunction(getRandomItemNameOptions("Namespace")),
+    subText: "Search for attributes",
+    tagColor: "#F09801",
+    disableTooltip: { title: "Disabled because..." },
+    children: [
+      {
+        value: "domain",
+        name: "Domain",
+        icon: <GlobalOutlined />,
+        subText: "In a domain",
+        tagColor: "green",
+        disableTooltip: { title: "Disabled because Namespace existed" },
+        operators: [OPERATORS.Equal, OPERATORS.NotEqual],
+        options: async (searchText) =>
+          mockAsyncFunction(getRandomItemNameOptions("Domain")),
+      },
+      authorFilter,
+    ],
   },
   {
-    value: "author",
-    name: "Author",
-    icon: <UserOutlined />,
-    subText: "By an author account or email",
-    tagColor: "cyan",
-    operators: [OPERATORS.Equal, OPERATORS.NotEqual],
-    typeaheadCallback: async (searchText) =>
-      mockAsyncFunction(getRandomItemNameOptions("Author")),
+    value: "segments",
+    name: "Segments",
+    icon: <ExperimentOutlined />,
+    subText: "Search for segments",
+    tagColor: "#F09801",
+    disableTooltip: { title: "Disabled because..." },
+    children: [
+      {
+        value: "namespace",
+        name: "Namespace",
+        icon: <SafetyOutlined />,
+        subText: "In a namespace",
+        tagColor: "green",
+        disableTooltip: { title: "Disabled because Domain existed" },
+        operators: [OPERATORS.Equal, OPERATORS.NotEqual],
+        options: async (searchText) =>
+          mockAsyncFunction(getRandomItemNameOptions("Namespace")),
+      },
+      authorFilter,
+    ],
   },
+  authorFilter,
 ];
 // END mock
