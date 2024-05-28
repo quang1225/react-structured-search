@@ -50,8 +50,6 @@ The example mockFilter() function:
 
 ```js
 // START mock
-export const DEFAULT_QUERY_FILTER_KEY = "query";
-
 export const mockAsyncFunction = (
   obj: Option[],
   delay = 500,
@@ -175,6 +173,7 @@ export const MOCK_FILTERS: Filter[] = [
 | **`operators`**         | Option[]                                                                     | Operators configuration                                        |
 | **`typeaheadCallback`** | (searchText: string) => Promise<Option[]>                                    | API callback when user finish typing search text ( debounced ) |
 | **`tagColor`**          | [AntDesignTagColorProp](https://ant.design/components/tag#tag-demo-colorful) | Colors supported by Ant Design's Tag component                 |
+| **`hasMultiOptions`**   | boolean                                                                      | Enable selecting multiple options                              |
 | **...rest**             | Option                                                                       | All props of `Option` type                                     |
 
 <br/>

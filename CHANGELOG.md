@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.2
+
+`2024-05-28`
+
+- 🆕 🔥 Support selecting multiple options
+
 ## v1.1.0
 
 `2024-05-17`

@@ -1,10 +1,21 @@
-import { StructuredSearchFilterValue, Filter, StructuredSearchValue } from "../components/StructuredSearch";
+import {
+  StructuredSearchFilterValue,
+  Filter,
+  Option,
+  StructuredSearchValue,
+} from "../components/StructuredSearch";
 
-export const getSelectValue = ({ filterKey, operatorKey, value }: StructuredSearchFilterValue) =>
+export const getSelectValue = ({
+  filterKey,
+  operatorKey,
+  value,
+}: StructuredSearchFilterValue) =>
   `${filterKey}${operatorKey || ""}${value || ""}`;
 
-export const convertBoxValueToSearchValue = (tagValue: string): StructuredSearchFilterValue => {
-  const operatorKey = tagValue.match(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/g)?.[0];
+export const convertBoxValueToSearchValue = (
+  tagValue: string,
+): StructuredSearchFilterValue => {
+  const operatorKey = tagValue.match(/[!#%^&*()+\=[\]{};':"\\|<>/?]+/g)?.[0];
   let filterKey = tagValue;
   let value = "";
 
@@ -17,29 +28,39 @@ export const convertBoxValueToSearchValue = (tagValue: string): StructuredSearch
   return { filterKey, operatorKey, value };
 };
 
-export const mapBoxValuesToSumitValue = (boxValues: string[], data: Filter[]): StructuredSearchValue => {
+export const mapBoxValuesToSumitValue = (
+  boxValues: string[],
+  data: Filter[],
+): StructuredSearchValue => {
   const searchObj = boxValues.reduce(
     (prev, tagValue) => {
-      const { filterKey, operatorKey, value } = convertBoxValueToSearchValue(tagValue);
+      const { filterKey, operatorKey, value } =
+        convertBoxValueToSearchValue(tagValue);
       const filterObj = findFilterByValue(data, filterKey);
 
       const isGroup = !!filterObj?.children && filterKey;
 
-      const filters = prev.filters.concat(isGroup ? [] : [{ filterKey, operatorKey, value }]);
-      const groupFilterKeys = prev.groupFilterKeys.concat(isGroup ? [filterKey] : []);
+      const filters = prev.filters.concat(
+        isGroup ? [] : [{ filterKey, operatorKey, value }],
+      );
+      const groupFilterKeys = prev.groupFilterKeys.concat(
+        isGroup ? [filterKey] : [],
+      );
 
       return {
         filters,
         groupFilterKeys,
       } as StructuredSearchValue;
     },
-    { filters: [], query: "", groupFilterKeys: [] } as StructuredSearchValue
+    { filters: [], query: "", groupFilterKeys: [] } as StructuredSearchValue,
   );
 
   return searchObj;
 };
 
-export const mapSelectValueToBoxValues = (value?: StructuredSearchValue): string[] => {
+export const mapSelectValueToBoxValues = (
+  value?: StructuredSearchValue,
+): string[] => {
   const { filters, groupFilterKeys = [] } = value || {};
 
   const boxValues =
@@ -47,13 +68,16 @@ export const mapSelectValueToBoxValues = (value?: StructuredSearchValue): string
       ?.concat(
         groupFilterKeys?.map((key) => ({
           filterKey: key,
-        }))
+        })),
       )
       .map((rs) => getSelectValue(rs)) || [];
   return boxValues;
 };
 
-export const findDeepestGroupFilter = (filters: Filter[], values: string[]): Filter | null => {
+export const findDeepestGroupFilter = (
+  filters: Filter[],
+  values: string[],
+): Filter | null => {
   let deepestObject = null;
   let maxDepth = -1;
 
@@ -73,7 +97,10 @@ export const findDeepestGroupFilter = (filters: Filter[], values: string[]): Fil
   return deepestObject;
 };
 
-export const findFilterByValue = (filters: Filter[], value: string | undefined): Filter | null => {
+export const findFilterByValue = (
+  filters: Filter[],
+  value: string | undefined,
+): Filter | null => {
   if (!value) return null;
 
   for (const obj of filters) {
@@ -107,7 +134,8 @@ export const getAllObjectValues = (filters) => {
 
 export const moveGroupFilterKeyToTop = (arr) => {
   const groupFilterKey = arr.find((arrValue) => {
-    const { filterKey, operatorKey, value } = convertBoxValueToSearchValue(arrValue);
+    const { filterKey, operatorKey, value } =
+      convertBoxValueToSearchValue(arrValue);
     return filterKey && !operatorKey && !value;
   });
   if (groupFilterKey) {
@@ -117,3 +145,8 @@ export const moveGroupFilterKeyToTop = (arr) => {
   }
   return arr;
 };
+
+export const isOptionActive = (
+  option: Option,
+  lastFilterValue: string | undefined,
+): boolean => !!lastFilterValue?.split(",").includes(option.name);

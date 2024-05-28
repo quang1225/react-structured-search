@@ -15,9 +15,19 @@ import {
   Tooltip,
   TooltipProps,
 } from "antd";
-import { ArrowRightOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  ArrowRightOutlined,
+  CheckCircleOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import useDebouncedState from "../../hooks/useDebouncedState";
-import { StyledSelect, StyledOption, StyledTag } from "./styles";
+import {
+  StyledSelect,
+  StyledOption,
+  StyledTag,
+  activeOptionStyle,
+  activeIconStyle,
+} from "./styles";
 import {
   mapSelectValueToBoxValues,
   findDeepestGroupFilter,
@@ -26,6 +36,7 @@ import {
   mapBoxValuesToSumitValue,
   convertBoxValueToSearchValue,
   moveGroupFilterKeyToTop,
+  isOptionActive,
 } from "../../helpers";
 import { DefaultOptionType } from "antd/es/select";
 
@@ -45,6 +56,7 @@ export type Filter = Option & {
   options?: ((searchText: string) => Promise<Option[]> | Option[]) | Option[];
   tagColor?: TagColorProp;
   children?: Filter[];
+  hasMultiOptions?: boolean;
 };
 
 export type StructuredSearchProps = SelectProps & {
@@ -86,6 +98,8 @@ const TYPEAHEAD_DELAY = 400;
 const DEFAULT_QUERY_KEY = "keywords";
 
 let isLastValueEndsWithAnOperatorCallbackState = false;
+let isMultiOptionState = false;
+let isTypeaheadState = false;
 
 const StructuredSearch: FC<StructuredSearchProps> = ({
   filters,
@@ -129,31 +143,33 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
       };
     }
 
-    let cCurrentFilters = filters;
+    let tempCurrentFilters = filters;
 
     // detect current Group Filter base on selected box values and index of depth of children
-    const cCurrentGroupFilter = findDeepestGroupFilter(filters, boxValues);
-    if (cCurrentGroupFilter?.children) {
-      cCurrentFilters = cCurrentGroupFilter.children;
+    const tempCurrentGroupFilter = findDeepestGroupFilter(filters, boxValues);
+    if (tempCurrentGroupFilter?.children) {
+      tempCurrentFilters = tempCurrentGroupFilter.children;
     }
 
-    const cFilterValues = cCurrentFilters.map((filter) => filter.value);
-
     return {
-      currentFilters: cCurrentFilters,
-      filterValues: cFilterValues,
-      currentGroupFilter: cCurrentGroupFilter,
+      currentFilters: tempCurrentFilters,
+      filterValues: tempCurrentFilters.map((filter) => filter.value),
+      currentGroupFilter: tempCurrentGroupFilter,
     };
   }, [boxValues]);
 
   const { operators, operatorValues } = useMemo(() => {
-    const cOperators = [
+    const tempOperators = [
       ...new Set(currentFilters.flatMap((filter) => filter.operators || [])),
     ];
-    const cOperatorValues = cOperators.map((operator) => operator.value);
 
-    return { operators: cOperators, operatorValues: cOperatorValues };
-  }, []);
+    return {
+      operators: [
+        ...new Set(currentFilters.flatMap((filter) => filter.operators || [])),
+      ],
+      operatorValues: tempOperators.map((operator) => operator.value),
+    };
+  }, [currentFilters]);
 
   // const allFilterKeys = useMemo(() => {
   //   return getAllObjectValues(filters);
@@ -161,50 +177,54 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
 
   const {
     lastBoxValue,
-    lastFilterValue,
+    lastFilterKey,
     lastFilterOperatorValue,
+    lastFilterValue,
     lastFilter,
     filterOptions,
     isLastValueEndsWithAFilterKey,
     isLastValueEndsWithAnOperator,
     isLastFilterAGroup,
+    isLastFilterHasMultiOptions,
   } = useMemo<{
     lastBoxValue: string;
-    lastFilterValue: string | undefined;
+    lastFilterKey: string | undefined;
     lastFilterOperatorValue: string | undefined;
+    lastFilterValue: string | undefined;
     lastFilter: Filter | undefined;
     filterOptions: Filter[];
     isLastValueEndsWithAFilterKey: boolean;
     isLastValueEndsWithAnOperator: boolean;
     isLastFilterAGroup: boolean;
+    isLastFilterHasMultiOptions: boolean;
   }>(() => {
-    const sLastBoxValue = boxValues.at(-1) || "";
+    const tempLastBoxValue = boxValues.at(-1) || "";
     const {
-      filterKey: sLastFilterValue,
-      operatorKey: sOperatorValue,
-      value: sValue,
-    } = convertBoxValueToSearchValue(sLastBoxValue);
-    const sLastFilter = currentFilters.find(
-      (filter) => filter.value === sLastFilterValue,
+      filterKey: tempLastFilterKey,
+      operatorKey: tempOperatorValue,
+      value: tempLastFilterValue,
+    } = convertBoxValueToSearchValue(tempLastBoxValue);
+    const tempLastFilter = currentFilters.find(
+      (filter) => filter.value === tempLastFilterKey,
     );
-    const sFilterOptions = currentFilters.filter(
-      (filter) => !boxValues.find((value) => value?.startsWith(filter.value)),
-    );
-    const sIsLastValueEndsWithAFilterKey = filterValues.includes(sLastBoxValue);
-    const sIsLastValueEndsWithAnOperator = !!operatorValues.find(
-      (operatorVal) => sLastBoxValue.endsWith(operatorVal),
-    );
-    const sIsLastFilterAGroup = !!sLastFilter?.children;
 
     return {
-      lastBoxValue: sLastBoxValue,
-      lastFilterValue: sLastFilterValue,
-      lastFilter: sLastFilter,
-      lastFilterOperatorValue: sOperatorValue,
-      filterOptions: sFilterOptions,
-      isLastValueEndsWithAFilterKey: sIsLastValueEndsWithAFilterKey,
-      isLastValueEndsWithAnOperator: sIsLastValueEndsWithAnOperator,
-      isLastFilterAGroup: sIsLastFilterAGroup,
+      lastBoxValue: tempLastBoxValue,
+      lastFilterKey: tempLastFilterKey,
+      lastFilterOperatorValue: tempOperatorValue,
+      lastFilterValue: tempLastFilterValue,
+      lastFilter: currentFilters.find(
+        (filter) => filter.value === tempLastFilterKey,
+      ),
+      filterOptions: currentFilters.filter(
+        (filter) => !boxValues.find((value) => value?.startsWith(filter.value)),
+      ),
+      isLastValueEndsWithAFilterKey: filterValues.includes(tempLastBoxValue),
+      isLastValueEndsWithAnOperator: !!operatorValues.find((operatorVal) =>
+        tempLastBoxValue.endsWith(operatorVal),
+      ),
+      isLastFilterAGroup: !!tempLastFilter?.children,
+      isLastFilterHasMultiOptions: !!tempLastFilter?.hasMultiOptions,
     };
   }, [boxValues, filterValues, operatorValues]);
 
@@ -250,7 +270,8 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     [currentFilters, currentGroupFilter, boxValues],
   );
 
-  const dropdownLoading = loading && isLastValueEndsWithAnOperator;
+  const dropdownLoading =
+    loading && (isLastValueEndsWithAnOperator || isMultiOptionState);
 
   // Handle change in the select input
   const handleChange = (values: string[]) => {
@@ -275,11 +296,23 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     // group Filter's items to a tag
     const isNewValueAOperator = operatorValues.includes(newValue);
 
+    if (isLastValueEndsWithAnOperator && isLastFilterHasMultiOptions) {
+      isMultiOptionState = true;
+    }
+
     const isInATag =
       !isLastFilterAGroup &&
-      (isLastValueEndsWithAFilterKey || isLastValueEndsWithAnOperator);
+      (isLastValueEndsWithAFilterKey ||
+        isLastValueEndsWithAnOperator ||
+        isMultiOptionState);
     if (isInATag) {
-      let newLastValue = `${lastBoxValue}${newValue}`;
+      let newLastValue = `${lastBoxValue}${isLastValueEndsWithAnOperator ? "" : ","}${newValue}`;
+
+      // Filter out if boxValue already included recently selected value
+      if (lastBoxValue.includes(newValue)) {
+        let reg = new RegExp(String.raw`${newValue}\,|\,${newValue}`, "g");
+        newLastValue = newLastValue.replace(reg, "");
+      }
 
       if (isLastValueEndsWithAnOperator) {
         // prevent string that contains operators after an operator
@@ -299,9 +332,12 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
         });
       }
 
+      if (!isMultiOptionState) {
+        setCurrentOptions([]);
+      }
+
       const newValues = [...boxValues];
       newValues[newValues.length - 1] = newLastValue;
-      setCurrentOptions([]);
       setBoxValues(newValues);
       return newValues;
     }
@@ -374,22 +410,27 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
           ? lastFilter.options(debouncedSearchText)
           : []);
         setLoading(false);
+        isTypeaheadState = false;
 
         if (isLastValueEndsWithAnOperatorCallbackState) {
           setCurrentOptions(rs);
         }
       } catch (error) {
         setLoading(false);
+        isTypeaheadState = false;
       }
     };
 
     try {
-      // after an Operator
-      if (isLastValueEndsWithAnOperator) {
+      // after an Operator ( show Filter's options )
+      if (isLastValueEndsWithAnOperator || isMultiOptionState) {
         const options = lastFilter?.options;
 
         if (typeof options === "function") {
           if (options("") instanceof Promise) {
+            // prevent call API when selecting multipe options
+            if (!isLastValueEndsWithAnOperator && !isTypeaheadState) return;
+
             renderPromiseOptions();
           } else {
             setCurrentOptions(options(searchValue) as Option[]);
@@ -403,13 +444,13 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
 
       // after a Filter key
       if (isLastValueEndsWithAFilterKey && lastFilter) {
-        // if the filter has Children, show them
+        // if the Filter has Children, show them
         if (lastFilter.children) {
           setCurrentOptions(lastFilter.children || []);
           return;
         }
 
-        // show filter's Operators
+        // show Filter's Operators
         setCurrentOptions(lastFilter.operators || []);
         return;
       }
@@ -438,7 +479,9 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     }
 
     // check if input after an Operator
-    if (isLastValueEndsWithAnOperator) {
+
+    if (isLastValueEndsWithAnOperator || isMultiOptionState) {
+      isTypeaheadState = true;
       setDebouncedSearchText(value);
     }
   };
@@ -446,6 +489,12 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   // add new value when blur
   const handleBlur = (e: React.FocusEvent<HTMLElement, Element>) => {
     onBlur?.(e);
+
+    if (isMultiOptionState) {
+      e.preventDefault();
+      setCurrentOptions(filterOptions);
+      isMultiOptionState = false;
+    }
 
     if (!searchValue) return;
 
@@ -481,11 +530,22 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
     onInputKeyDown?.(e);
 
     if (e.key === "Enter") {
+      e.preventDefault();
       handleSubmit();
+    }
+
+    if (e.key === "Tab") {
+      if (isMultiOptionState) {
+        e.preventDefault();
+        setCurrentOptions(filterOptions);
+        isMultiOptionState = false;
+      }
     }
   };
 
   const handleRemoveATag = (value: string, option: DefaultOptionType) => {
+    isMultiOptionState = false;
+
     // remove all children filter keys of a Group Filter when removing a group tag
     const removedGroupFilter = findFilterByValue(filters, value);
     if (removedGroupFilter) {
@@ -538,7 +598,14 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
                     title={disabled ? option2.disableTooltip?.title : undefined}
                   >
                     <StyledOption className={`${disabled ? "disabled" : ""}`}>
-                      <div className="leftSide">
+                      <div
+                        className="leftSide"
+                        style={
+                          isOptionActive(option2, lastFilterValue)
+                            ? activeOptionStyle
+                            : {}
+                        }
+                      >
                         {option2.icon}
                         {option2.name}
                       </div>
@@ -548,6 +615,9 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
                           findFilterByValue(filters, option2.value)?.children
                             ?.length,
                         ) > 0 && groupIcon}
+                        {isOptionActive(option2, lastFilterValue) && (
+                          <CheckCircleOutlined style={activeIconStyle} />
+                        )}
                       </div>
                     </StyledOption>
                   </Tooltip>

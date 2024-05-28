@@ -9,8 +9,6 @@ import { Filter, type Option } from "../../components/StructuredSearch";
 import React from "react";
 
 // START mock
-export const DEFAULT_QUERY_FILTER_KEY = "query";
-
 export const mockAsyncFunction = (
   obj: Option[],
   delay = 500,
@@ -37,7 +35,7 @@ export const getRandomItemNameOptions = (name: string) => {
   return result.map((x) => ({ value: x, name: x }) as Option);
 };
 
-const OPERATORS = {
+export const OPERATORS = {
   Equal: {
     value: "=",
     name: "=",
@@ -50,7 +48,7 @@ const OPERATORS = {
   },
 };
 
-const authorFilter = {
+export const AUTHOR_FILTER = {
   value: "author",
   name: "Author",
   icon: <UserOutlined />,
@@ -78,8 +76,9 @@ export const MOCK_FILTERS: Filter[] = [
         operators: [OPERATORS.Equal, OPERATORS.NotEqual],
         options: async (searchText) =>
           mockAsyncFunction(getRandomItemNameOptions("Domain")),
+        hasMultiOptions: true,
       },
-      authorFilter,
+      AUTHOR_FILTER,
     ],
   },
   {
@@ -101,9 +100,9 @@ export const MOCK_FILTERS: Filter[] = [
         options: async (searchText) =>
           mockAsyncFunction(getRandomItemNameOptions("Namespace")),
       },
-      authorFilter,
+      AUTHOR_FILTER,
     ],
   },
-  authorFilter,
+  AUTHOR_FILTER,
 ];
 // END mock

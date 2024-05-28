@@ -136,4 +136,16 @@ const StyledTag = styled(Tag)`
   }
 `;
 
-export { StyledSelect, StyledOption, StyledTag };
+const activeOptionStyle = {
+  color: "#00b14f",
+};
+
+const activeIconStyle = { color: "#00b14f", fontSize: "16px" };
+
+export {
+  StyledSelect,
+  StyledOption,
+  StyledTag,
+  activeOptionStyle,
+  activeIconStyle,
+};
