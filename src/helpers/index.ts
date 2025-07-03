@@ -13,7 +13,7 @@ export const getSelectValue = ({
   `${filterKey}${operatorKey || ""}${value || ""}`;
 
 export const convertBoxValueToSearchValue = (
-  tagValue: string,
+  tagValue = "",
 ): StructuredSearchFilterValue => {
   const operatorKey = tagValue.match(/[!#%^&*()+\=[\]{};':"\\|<>/?]+/g)?.[0];
   let filterKey = tagValue;

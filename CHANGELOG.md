@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.3
+
+`2024-12-18`
+
+- 🔥 Migrate to `RSpack` bundler for better performance and compatibility
+
 ## v1.1.2
 
 `2024-05-28`

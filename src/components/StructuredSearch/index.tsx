@@ -38,7 +38,12 @@ import {
   moveGroupFilterKeyToTop,
   isOptionActive,
 } from "../../helpers";
-import { DefaultOptionType } from "antd/es/select";
+
+type DefaultOptionType = {
+  label?: React.ReactNode;
+  value?: string | number | null;
+  children?: any;
+};
 
 export type Option = {
   value: string;

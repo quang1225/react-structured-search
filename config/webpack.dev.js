@@ -1,4 +1,4 @@
-const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { HtmlRspackPlugin } = require("@rspack/core");
 const { merge } = require("webpack-merge");
 
 const paths = require("./paths");
@@ -17,7 +17,7 @@ module.exports = merge(common, {
     port: 8080,
   },
   plugins: [
-    new HtmlWebpackPlugin({
+    new HtmlRspackPlugin({
       template: paths.src + "/dev/index.html",
     }),
   ],

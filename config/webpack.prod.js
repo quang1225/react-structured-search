@@ -21,5 +21,6 @@ module.exports = merge(common, {
     react: "react",
     "react-dom": "react-dom",
     "react-router-dom": "react-router-dom",
+    antd: "antd",
   },
 });

@@ -35,8 +35,8 @@ const StyledSelect = styled.div`
     .ant-select-selector {
       padding-left: 36px;
 
-      .ant-select-selection-placeholder {
-        padding-left: ${35 - 4}px;
+      .ant-select-selection-wrap {
+        height: 100%;
       }
 
       .ant-select-selection-search {
