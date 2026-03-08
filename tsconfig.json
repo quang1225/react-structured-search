@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2022",
+    "lib": ["es2022", "dom", "dom.iterable"],
     "module": "commonjs",
     "outDir": "./dist/",
     "jsx": "react",

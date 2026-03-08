@@ -1,4 +1,5 @@
-import StructuredSearch, {
+import StructuredSearch from "./components/StructuredSearch";
+import type {
   Filter,
   Option,
   StructuredSearchProps,
@@ -6,4 +7,4 @@ import StructuredSearch, {
 } from "./components/StructuredSearch";
 
 export default StructuredSearch;
-export { Filter, Option, StructuredSearchProps, StructuredSearchValue };
+export type { Filter, Option, StructuredSearchProps, StructuredSearchValue };

@@ -164,14 +164,11 @@ const StructuredSearch: FC<StructuredSearchProps> = ({
   }, [boxValues]);
 
   const { operators, operatorValues } = useMemo(() => {
-    const tempOperators = [
-      ...new Set(currentFilters.flatMap((filter) => filter.operators || [])),
-    ];
+    const flatOperators = currentFilters.flatMap((filter) => filter.operators || []);
+    const tempOperators: Option[] = [...new Set(flatOperators)];
 
     return {
-      operators: [
-        ...new Set(currentFilters.flatMap((filter) => filter.operators || [])),
-      ],
+      operators: tempOperators,
       operatorValues: tempOperators.map((operator) => operator.value),
     };
   }, [currentFilters]);

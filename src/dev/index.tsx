@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import StructuredSearch from "react-structured-search";
+import StructuredSearch from "../index";
 import { MOCK_FILTERS } from "./mock";
 import Wrapper from "./styles";
 

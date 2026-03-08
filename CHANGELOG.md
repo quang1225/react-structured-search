@@ -2,6 +2,12 @@
 
 ## v1.1.3
 
+`2026-03-09`
+
+- 🔥 Optimize bundle size
+
+## v1.1.3
+
 `2024-12-18`
 
 - 🔥 Migrate to `RSpack` bundler for better performance and compatibility

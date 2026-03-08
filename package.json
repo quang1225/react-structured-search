@@ -1,24 +1,28 @@
 {
   "name": "react-structured-search",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "license": "MIT",
   "author": "quang1225",
   "email": "quang1225@gmail.com",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "description": "A React, Typescript library for quickly intergrate autocomplete search queries with dynamic suggestions.",
   "repository": "quang1225/react-structured-search",
   "bugs": "https://github.com/quang1225/react-structured-search/issues",
   "homepage": "https://react-structured-search.quang.work",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
+    "prepack": "npm run build",
     "start": "rspack serve --config ./config/webpack.dev.js",
     "build": "rspack --config ./config/webpack.prod.js",
     "publish": "yarn npm publish",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
-  "peerDependencies": {
-    "antd": "^5.22.5"
-  },
+  "peerDependencies": {},
   "devDependencies": {
     "@ant-design/icons": "^5.3.6",
     "@babel/core": "^7.24.3",
